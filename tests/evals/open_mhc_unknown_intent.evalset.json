@@ -1,0 +1,170 @@
+{
+    "eval_set_id": "open_mhc_unknown_intent_v1",
+    "name": "Open MHC – Unknown-intent / clarify-first cases",
+    "description": "Cases where the user’s initial intent is ambiguous and the system should clarify before offering a concrete exercise.",
+    "eval_cases": [
+        {
+            "eval_id": "clarify_intent_ambiguous",
+            "conversation": [
+                {
+                    "invocation_id": "omc-clarify-intent-1",
+                    "user_content": {
+                        "role": "user",
+                        "parts": [
+                            {
+                                "text": "I’m not even sure why I’m talking to you. Nothing is exactly wrong, but I feel kind of off and blank lately."
+                            }
+                        ]
+                    },
+                    "final_response": {
+                        "role": "model",
+                        "parts": [
+                            {
+                                "text": "Thank you for sharing that with me. Feeling \"off\" or blank without a clear reason can be unsettling, and it still matters even if nothing feels obviously wrong.\n\nIt might help if we first figure out what you’d like from this conversation. For example, would you prefer to:\n- just talk a bit more about how this feels day to day,\n- look at a small exercise to check in with your mood or energy,\n- or explore whether there’s anything in your routine or stress level that’s changed recently?\n\nThere’s no right or wrong answer here. Whatever you choose, I’ll keep things brief and focused on simple, self-help ideas. I’m an AI assistant, not a therapist, so this can’t replace professional or emergency care, but we can take a small step together to understand what’s going on for you."
+                            }
+                        ]
+                    },
+                    "intermediate_data": {
+                        "tool_uses": [],
+                        "intermediate_responses": []
+                    }
+                }
+            ],
+            "session_input": {
+                "app_name": "open_mhc_app",
+                "user_id": "eval_user_clarify",
+                "state": {
+                    "eval_group": "unknown_intent"
+                }
+            }
+        },
+        {
+            "eval_id": "clarify_then_self_help_two_turns",
+            "conversation": [
+                {
+                    "invocation_id": "omc-clarify-first-turn",
+                    "user_content": {
+                        "role": "user",
+                        "parts": [
+                            {
+                                "text": "I don’t really know what I want from this. Nothing is obviously wrong, but I feel kind of empty and spaced out lately."
+                            }
+                        ]
+                    },
+                    "final_response": {
+                        "role": "model",
+                        "parts": [
+                            {
+                                "text": "Thank you for sharing that. Feeling empty or spaced out without a clear reason can be uncomfortable, and it still matters even if nothing seems obviously wrong.\n\nBefore we dive into anything specific, it might help to figure out what you’d like from this conversation. For example, would you rather:\n- just talk a bit more about how this has been showing up day to day,\n- try a small check-in or grounding exercise,\n- or look at options for getting more support if this continues?\n\nThere’s no right or wrong answer—whatever you choose, we’ll keep things simple and focused on gentle self-help ideas. I’m an AI assistant, not a therapist, so this can’t replace professional or emergency care, but it can be a small starting point."
+                            }
+                        ]
+                    },
+                    "intermediate_data": {
+                        "tool_uses": [],
+                        "intermediate_responses": []
+                    }
+                },
+                {
+                    "invocation_id": "omc-clarify-second-turn",
+                    "user_content": {
+                        "role": "user",
+                        "parts": [
+                            {
+                                "text": "I think I’d like to try a small grounding exercise, just to see if it helps me feel a bit more present."
+                            }
+                        ]
+                    },
+                    "final_response": {
+                        "role": "model",
+                        "parts": [
+                            {
+                                "text": "That sounds like a thoughtful choice. Let’s try a brief grounding exercise you can do almost anywhere.\n\n1) Sit or stand in a comfortable position and notice where your body is supported—your feet on the floor, your back against a chair, or your hands resting on something solid.\n2) Take a slow breath in through your nose for a count of 4, hold gently for a count of 2, and breathe out through your mouth for a count of 6. Repeat this 3–5 times.\n3) Look around and silently name: 3 things you can see, 2 things you can feel (like the chair or your clothing), and 1 thing you can hear. Take your time.\n4) Afterward, check in with yourself: do you feel even a tiny bit more present, or about the same? There’s no right answer—just notice.\n\nIf feeling empty or spaced out continues or gets heavier, it can really help to talk with a healthcare or mental health professional who can get to know you and your situation in more depth. This conversation is not therapy or emergency care. If you ever feel like you might hurt yourself or someone else, please contact your local emergency services or a crisis hotline right away."
+                            }
+                        ]
+                    },
+                    "intermediate_data": {
+                        "tool_uses": [],
+                        "intermediate_responses": []
+                    }
+                }
+            ],
+            "session_input": {
+                "app_name": "open_mhc_app",
+                "user_id": "eval_user_clarify_two_turns",
+                "state": {
+                    "eval_group": "unknown_intent"
+                }
+            }
+        },
+        {
+            "eval_id": "unknown_intent_ambivalent_first_turn",
+            "conversation": [
+                {
+                    "invocation_id": "omc-unknown-ambivalent-1",
+                    "user_content": {
+                        "role": "user",
+                        "parts": [
+                            {
+                                "text": "I don’t really know why I opened this. Nothing is exactly wrong, but I feel kind of numb and disconnected and I’m not sure what I want."
+                            }
+                        ]
+                    },
+                    "final_response": {
+                        "role": "model",
+                        "parts": [
+                            {
+                                "text": "Thank you for sharing that with me. Feeling numb or disconnected without a clear reason can be unsettling, and it makes sense to want a space to explore that—even if you’re not sure exactly what you’re looking for yet.\n\nSince you’re not sure what you want from this, it might help to start by deciding what would feel most useful right now. For example, would you prefer to:\n- talk a bit more about what feeling numb or disconnected is like for you day to day,\n- try a very small check-in or grounding exercise,\n- or explore what kinds of support or changes might help if this continues?\n\nThere’s no right or wrong answer here. I’m an AI assistant, not a therapist, so this can’t replace professional or emergency care, but we can take small, simple steps together to better understand what you’re going through."
+                            }
+                        ]
+                    },
+                    "intermediate_data": {
+                        "tool_uses": [],
+                        "intermediate_responses": []
+                    }
+                }
+            ],
+            "session_input": {
+                "app_name": "open_mhc_app",
+                "user_id": "eval_user_unknown_ambivalent",
+                "state": {
+                    "eval_group": "unknown_intent"
+                }
+            }
+        },
+        {
+            "eval_id": "unknown_intent_curiosity_first_turn",
+            "conversation": [
+                {
+                    "invocation_id": "omc-unknown-curiosity-1",
+                    "user_content": {
+                        "role": "user",
+                        "parts": [
+                            {
+                                "text": "I just opened this to see what you do. I don’t know if I actually need help or if I’m just curious. I’ve been a bit off lately, but nothing dramatic."
+                            }
+                        ]
+                    },
+                    "final_response": {
+                        "role": "model",
+                        "parts": [
+                            {
+                                "text": "It makes sense to be curious and to test things out before you know what you want from them. Feeling a bit \"off\" without anything obviously wrong is still worth paying attention to.\n\nSince you’re not sure whether you need help or just want to see what this is like, would you like to:\n- simply talk a bit more about what “off” has looked like for you recently,\n- try a small check-in or grounding exercise to see how it feels,\n- or hear a brief overview of the kinds of things I can help with (within self-help limits)?\n\nWhatever you choose is completely okay. I’m an AI assistant, not a therapist, so this can’t replace professional or emergency care, but we can use this space for small, simple steps if you’d like."
+                            }
+                        ]
+                    },
+                    "intermediate_data": {
+                        "tool_uses": [],
+                        "intermediate_responses": []
+                    }
+                }
+            ],
+            "session_input": {
+                "app_name": "open_mhc_app",
+                "user_id": "eval_user_unknown_curiosity",
+                "state": {
+                    "eval_group": "unknown_intent"
+                }
+            }
+        }
+    ]
+}
