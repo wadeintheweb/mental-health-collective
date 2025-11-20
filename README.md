@@ -19,7 +19,7 @@ The system aims to:
 * Offer **psychoeducation**, **light coping exercises** (CBT / MBSR style), and **navigation to external resources** such as crisis lines or mental health services.
 * Demonstrate a **safety-centered, auditable multi-agent architecture** that can be evaluated and monitored.
 
-**Benefits:**
+Benefits:
 * Bridges the global mental health gap, especially in under-resourced regions.
 * Operates 24/7 with ethical and privacy-first design.
 * Reduces stigma by offering anonymous, judgment-free support.

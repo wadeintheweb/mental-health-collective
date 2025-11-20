@@ -11,10 +11,45 @@ from google.adk.agents.invocation_context import InvocationContext
 from google.adk.events import Event
 from google.adk.tools import google_search  # built-in Google Search tool
 
+from .schemas.shared import (
+    SCHEMA_VERSION,
+    ListenerOutput,
+    SafetyDecisionV2,
+    TherapyPlan,
+    ResourceResults,
+)
+
 # ============================================================================
 # 4. Orchestrator (Custom BaseAgent) – root entrypoint for ADK CLI
 # ============================================================================
 
+ORCHESTRATOR_INSTRUCTION = """
+You are the Orchestrator Agent for the Open Mental Health Collective system.
+
+Your responsibilities:
+- Route turns through the Listener, Safety & Ethics, Therapy Coach and
+  Resource Connector agents.
+- Maintain and update shared session.state.
+- Enforce safety policies, including respecting SafetyDecisionV2.
+- Optionally emit a final, consolidated text response based on state.
+
+Behavioral highlights:
+- Always run the Listener first for each user message.
+- Run Safety & Ethics whenever risk_level != "none" or user_intent is
+  "crisis_support".
+- If SafetyDecisionV2.block_reply == true, do NOT allow self-help content and
+  instead show a short crisis-oriented message (from user_message_override if
+  available).
+- If user_intent is "unknown", favor asking clarifying questions before
+  invoking the Therapy Coach.
+- The Therapy Coach should only be invoked when it is safe to do so according
+  to SafetyDecisionV2.allow_self_help and block_reply.
+- The Resource Connector may be used to surface crisis lines or other services,
+  especially for "resource_navigation" or "crisis_support" intents.
+
+You should use the helpers and schemas defined in code; you do NOT call
+other agents directly from this instruction—you are implemented in Python.
+"""
 
 class MentalHealthOrchestrator(BaseAgent):
     """
@@ -132,4 +167,106 @@ root_agent = MentalHealthOrchestrator(
     resource_connector_agent=resource_connector_agent,
 )
 
+class MentalHealthOrchestrator(BaseAgent):
+    model_config = {"arbitrary_types_allowed": True}
 
+    listener_agent: LlmAgent = listener_agent
+    safety_agent: LlmAgent = safety_agent
+    therapy_coach_agent: LlmAgent = therapy_coach_agent
+    resource_connector_agent: LlmAgent = resource_connector_agent
+
+    async def _run_async_impl(self, ctx: CallbackContext):
+        state = ctx.session.state
+
+        if state.get("schema_version") != SCHEMA_VERSION:
+            state["schema_version"] = SCHEMA_VERSION
+
+        # 1) Listener
+        async for event in self.listener_agent.run_async(ctx):
+            yield event
+
+        state = ctx.session.state
+        listener = load_listener_output(state)
+        if not listener:
+            text = (
+                "I’m having trouble understanding the details of what you shared, "
+                "but I’m glad you reached out. This system cannot provide emergency "
+                "help. If you are in immediate danger or think you might hurt "
+                "yourself or someone else, please contact local emergency "
+                "services or a crisis hotline right away."
+            )
+            yield make_text_event(author=self.name, text=text)
+            return
+
+        must_run_safety = listener.risk.risk_level != "none" or (
+            listener.user_intent == "crisis_support"
+        )
+
+        safety = None
+        if must_run_safety:
+            async for event in self.safety_agent.run_async(ctx):
+                yield event
+            state = ctx.session.state
+            safety = load_safety_decision(state)
+
+            if not safety:
+                text = (
+                    "Something went wrong while checking safety. "
+                    "To be cautious, I can’t provide self-help exercises right now. "
+                    "If you are struggling, please consider reaching out to a "
+                    "trusted person or a local health professional. "
+                    "If you are in immediate danger, contact emergency services "
+                    "or a crisis hotline right away."
+                )
+                yield make_text_event(author=self.name, text=text)
+                return
+
+            if safety.block_reply:
+                assembled = assemble_final_response(state)
+                if not assembled:
+                    assembled = (
+                        "Based on what you’ve shared, it’s really important to reach "
+                        "out to real-world support right now. This system cannot "
+                        "safely continue with self-help in this moment. "
+                        "If you are in immediate danger or feel like you might hurt "
+                        "yourself or someone else, please contact local emergency "
+                        "services or a crisis hotline immediately."
+                    )
+                yield make_text_event(author=self.name, text=assembled)
+                return
+
+        # UNKNOWN intent → clarify only
+        intent = listener.user_intent
+        if intent == "unknown":
+            return
+
+        # Resource path
+        if intent in ("resource_navigation", "crisis_support"):
+            async for event in self.resource_connector_agent.run_async(ctx):
+                yield event
+            state = ctx.session.state
+            assembled = assemble_final_response(state)
+            if assembled:
+                yield make_text_event(author=self.name, text=assembled)
+            return
+
+        # Therapy path
+        allow_self_help = True
+        if must_run_safety:
+            safety = load_safety_decision(ctx.session.state)
+            allow_self_help = bool(safety and safety.allow_self_help and not safety.block_reply)
+
+        if allow_self_help:
+            async for event in self.therapy_coach_agent.run_async(ctx):
+                yield event
+
+        state = ctx.session.state
+        assembled = assemble_final_response(state)
+        if assembled:
+            yield make_text_event(author=self.name, text=assembled)
+
+
+root_agent = MentalHealthOrchestrator(
+    name="open_mhc_orchestrator",
+    instruction=ORCHESTRATOR_INSTRUCTION,
+)
