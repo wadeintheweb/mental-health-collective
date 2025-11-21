@@ -1,5 +1,5 @@
 # ============================================================================
-# 1. Shared schemas for JSON IO between agents (saved in session.state)
+# Shared schemas for JSON IO between agents (saved in session.state)
 # ============================================================================
 from typing import List, Literal, Optional
 from pydantic import BaseModel, Field, field_validator

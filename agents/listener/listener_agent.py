@@ -1,23 +1,13 @@
-from __future__ import annotations
+# agents/listener/listener_agent.py
 
-from enum import Enum
-from typing import AsyncGenerator, List, Optional
+import os
 
-from typing_extensions import override
-from pydantic import BaseModel, Field
+from google.adk.agents import LlmAgent
 
-from google.adk.agents import BaseAgent, LlmAgent
-from google.adk.agents.invocation_context import InvocationContext
-from google.adk.events import Event
-from google.adk.tools import google_search  # built-in Google Search tool
+from schemas import ListenerOutput
 
-from .schemas.shared import (
-    SCHEMA_VERSION,
-    ListenerOutput,
-    SafetyDecisionV2,
-    TherapyPlan,
-    ResourceResults,
-)
+DEFAULT_MODEL = os.environ.get("OMC_MODEL_NAME", "gemini-2.0-flash")
+
 
 LISTENER_INSTRUCTION = """
 You are the Listener Agent in a mental-health support system.
@@ -136,48 +126,16 @@ You MUST respond with ONLY a JSON object that conforms to this schema:
   "notes_for_downstream": string or null
 }
 
-- normalized_utterance: 1–3 sentence neutral paraphrase of what the user said.
-- detected_emotion: a short phrase ("sad and tired", "anxious and overwhelmed").
-- risk.risk_reasons: short list explaining WHY you chose that risk level.
-- notes_for_downstream: optional notes to help other agents. No PII.
-
-────────────────────────────────
-AMBIGUITY & CLARIFICATION
-────────────────────────────────
-
-If the user seems unsure why they are here, or says they "don’t know what they
-want" or “just feel off/blank/weird”, you SHOULD:
-- Paraphrase how they feel in `normalized_utterance`.
-- Set `user_intent` to "unknown".
-- Use `notes_for_downstream` to mention: "Consider asking what they would
-  like from this conversation (e.g., to talk more, try a small exercise,
-  or explore resources)."
-
-You MUST NOT turn vague “I don’t know” messages into strong intents like
-"skills_practice" or "psychoeducation". Only assign those labels when the
-user’s request is explicit and clear.
-
-────────────────────────────────
-NO EXTRA TEXT
-────────────────────────────────
-
 Your entire response must be valid JSON conforming to the schema above.
 Do NOT include explanations or text outside the JSON object.
 """
 
-# You can swap this model string for a Vertex AI endpoint or another Gemini model
-DEFAULT_MODEL = "gemini-2.0-flash"
-
 listener_agent = LlmAgent(
     name="listener_agent",
-    description=(
-        "Initial empathic front-door for the Open Mental Health Collective. "
-        "Provides reflective listening, detects user intent and initial risk, "
-        "and emits structured ListenerOutput to session.state['listener_output']."
-    ),
     model=DEFAULT_MODEL,
     instruction=LISTENER_INSTRUCTION,
     output_schema=ListenerOutput,
     output_key="listener_output",
     include_contents="default",
 )
+
