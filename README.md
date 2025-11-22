@@ -202,8 +202,6 @@ User: “I actually bought the pills and chose a time for tonight. I don’t thi
   * Sends a **crisis-only message** directing the user to emergency services/crisis hotlines.
   * Turn ends; no exercises or self-help are provided.
 
-A Mermaid sequence diagram illustrating these interactions is available and can be included if helpful.
-
 ---
 
 ## 4. Safety Mechanisms
@@ -520,7 +518,7 @@ Potential improvements:
   * Standard Google auth (e.g., `GOOGLE_APPLICATION_CREDENTIALS`) for cloud access.
 
 
-### 9. Testing & Evaluation (Expanded)
+## 9. Testing & Evaluation (Expanded)
 
 The OMHC system has three main layers of testing:
 
