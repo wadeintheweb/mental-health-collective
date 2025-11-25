@@ -1,4 +1,4 @@
-# agents/safety_ethics/__init__.py
+# agents/safety_ethics_agent/__init__.py
 
 from .agent import root_agent
 

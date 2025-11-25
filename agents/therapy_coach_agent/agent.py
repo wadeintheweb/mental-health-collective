@@ -1,9 +1,16 @@
 # agents/therapy_coach_agent/agent.py
 
 import os
+import sys
+from pathlib import Path
 from dotenv import load_dotenv, find_dotenv
 
 from google.adk.agents import LlmAgent
+
+# Add project root to sys.path
+project_root = str(Path(__file__).resolve().parents[2])
+if project_root not in sys.path:
+    sys.path.append(project_root)
 
 from schemas import TherapyPlan
 
@@ -61,7 +68,7 @@ services, or crisis resources.
 Output ONLY the TherapyPlan JSON object. No extra commentary.
 """
 
-therapy_coach_agent = LlmAgent(
+root_agent = LlmAgent(
     name="therapy_coach_agent",
     model=DEFAULT_MODEL,
     instruction=THERAPY_COACH_INSTRUCTION,

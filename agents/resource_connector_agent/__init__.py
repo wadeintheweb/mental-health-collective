@@ -1,4 +1,4 @@
-# agents/resource_connector/__init__.py
+# agents/resource_connector_agent/__init__.py
 
 from .agent import resource_connector_agent
 
