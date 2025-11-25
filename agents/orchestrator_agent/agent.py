@@ -192,10 +192,11 @@ class MentalHealthOrchestrator(BaseAgent):
 
     model_config = {"arbitrary_types_allowed": True}
 
-    listener_agent = listener_agent
-    safety_agent = safety_ethics_agent
-    therapy_coach_agent = therapy_coach_agent
-    resource_connector_agent = resource_connector_agent
+    listener_agent: BaseAgent = listener_agent
+    safety_agent: BaseAgent = safety_ethics_agent
+    therapy_coach_agent: BaseAgent = therapy_coach_agent
+    resource_connector_agent: BaseAgent = resource_connector_agent
+    instruction: str = ""
 
     async def _run_async_impl(self, ctx: CallbackContext):
         state = ctx.session.state

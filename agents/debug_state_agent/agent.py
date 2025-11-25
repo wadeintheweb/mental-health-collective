@@ -8,7 +8,7 @@ from dotenv import load_dotenv, find_dotenv
 
 from google.genai import types as genai_types
 from google.adk.agents import BaseAgent
-from google.adk.context import CallbackContext
+from google.adk.agents.callback_context import CallbackContext
 from google.adk.events import Event
 
 from schemas import ListenerOutput, SafetyDecisionV2, SCHEMA_VERSION
