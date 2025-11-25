@@ -198,7 +198,7 @@ NO EXTRA TEXT
 Respond with ONLY the JSON object conforming to SafetyDecisionV2.
 """
 
-safety_ethics_agent = LlmAgent(
+root_agent = LlmAgent(
     name="safety_ethics_agent",
     description=(
         "Performs conservative safety and policy checks. Uses Listener output "
