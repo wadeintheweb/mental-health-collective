@@ -1,9 +1,10 @@
-# agents/debug_state/debug_state_agent.py
+# agents/debug_state_agent/agent.py
 
 import json
 from typing import Optional
 
 from pydantic import ValidationError
+from dotenv import load_dotenv, find_dotenv
 
 from google.genai import types as genai_types
 from google.adk.agents import BaseAgent
@@ -12,6 +13,7 @@ from google.adk.events import Event
 
 from schemas import ListenerOutput, SafetyDecisionV2, SCHEMA_VERSION
 
+_ = load_dotenv(find_dotenv())
 
 def _load_listener_output(state: dict) -> Optional[ListenerOutput]:
     raw = state.get("listener_output")

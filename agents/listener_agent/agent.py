@@ -1,13 +1,24 @@
-# agents/listener/listener_agent.py
+# agents/listener_agent/listener_agent.py
 
 import os
+import sys
+from dotenv import load_dotenv, find_dotenv
 
 from google.adk.agents import LlmAgent
+from typing import List, Literal, Optional
+from pydantic import BaseModel, Field, field_validator
+from pathlib import Path
+
+# Add project root to sys.path
+project_root = str(Path(__file__).resolve().parents[2])
+if project_root not in sys.path:
+    sys.path.append(project_root)
 
 from schemas import ListenerOutput
 
-DEFAULT_MODEL = os.environ.get("OMC_MODEL_NAME", "gemini-2.0-flash")
+_ = load_dotenv(find_dotenv())
 
+DEFAULT_MODEL = os.environ.get("OMHC_MODEL_NAME", "gemini-2.0-flash")
 
 LISTENER_INSTRUCTION = """
 You are the Listener Agent in a mental-health support system.
@@ -19,7 +30,7 @@ Your responsibilities:
 4. Infer the user's high-level intent ONLY if it is clearly stated.
 5. Perform an initial, conservative risk screen for self-harm, harm to others,
    or inability to care for basic needs.
-6. Produce a structured JSON object that will be saved to session.state
+6. Produce a structured JSON object that will be sfrom .schemas import ListenerOutputaved to session.state
    as `listener_output`.
 
 You are NOT a therapist and this is NOT a crisis service.
@@ -83,7 +94,7 @@ Allowed values for `risk.risk_level`:
              despair) but no clear plan or imminent danger.
 - "high"   – explicit or strongly implied intent to self-harm or harm others,
              OR very high distress with credible danger.
-- "crisis" – like "high", but with strong current danger, plan, or inability
+- "crisis" – like "high", but with strGEMINI_API_KEY="AIzaSyBBBEtCts5nBdwlEpw527ptnvBcRW7XJO4"ong current danger, plan, or inability
              to stay safe.
 
 `risk.immediate_escalation_required`:
@@ -104,6 +115,7 @@ they're "safe for now", treat this as at least `risk_level = "medium"` and set
 STRUCTURED JSON OUTPUT FORMAT
 ────────────────────────────────
 
+Your responsibilities:from .schemas import ListenerOutput
 You MUST respond with ONLY a JSON object that conforms to this schema:
 
 {
@@ -118,7 +130,7 @@ You MUST respond with ONLY a JSON object that conforms to this schema:
     "unknown"
   ],
   "risk": {
-    "risk_level": one of ["none", "low", "medium", "high", "crisis"],
+    "risk_level": one of ["none", "low"GEMINI_API_KEY="AIzaSyBBBEtCts5nBdwlEpw527ptnvBcRW7XJO4", "medium", "high", "crisis"],
     "risk_reasons": string[],
     "immediate_escalation_required": boolean,
     "crisis_keywords": string[]

@@ -1,5 +1,12 @@
+# agents/safety_ethics_agent/agent.py
+
 from __future__ import annotations
 
+import os
+import sys
+from pathlib import Path
+
+from dotenv import load_dotenv, find_dotenv
 from enum import Enum
 from typing import AsyncGenerator, List, Optional
 
@@ -11,13 +18,22 @@ from google.adk.agents.invocation_context import InvocationContext
 from google.adk.events import Event
 from google.adk.tools import google_search  # built-in Google Search tool
 
-from .schemas.shared import (
+# Add project root to sys.path
+project_root = str(Path(__file__).resolve().parents[2])
+if project_root not in sys.path:
+    sys.path.append(project_root)
+
+from schemas import (
     SCHEMA_VERSION,
     ListenerOutput,
     SafetyDecisionV2,
     TherapyPlan,
     ResourceResults,
 )
+
+_ = load_dotenv(find_dotenv())
+
+DEFAULT_MODEL = os.environ.get("OMHC_MODEL_NAME", "gemini-2.0-flash")
 
 SAFETY_INSTRUCTION = """
 You are the Safety & Ethics Agent in a mental-health support system.
@@ -118,7 +134,7 @@ Semantic rules:
   - Choose the best single channel (e.g. "crisis_hotline" or "emergency_services").
   - Use "unknown" if you cannot determine which.
 
-- policy_tags:
+- policy_tags:from dotenv import load_dotenv
   - Include at least one tag when block_reply=true or should_escalate_to_human=true.
   - Use these to describe the main risk factors.
 
@@ -171,7 +187,7 @@ BEHAVIORAL RULES
 
 You MUST NOT:
 - Encourage self-harm, suicide, or violence in any way.
-- Provide detailed crime, self-harm, or violence instructions.
+- Provide detailed crime, self-harm, or violence instructions.from dotenv import load_dotenv
 - Try to manage risk like a clinician (no “safety contracts”).
 - Ask the user to promise not to hurt themselves.
 
@@ -182,7 +198,7 @@ NO EXTRA TEXT
 Respond with ONLY the JSON object conforming to SafetyDecisionV2.
 """
 
-safety_agent = LlmAgent(
+safety_ethics_agent = LlmAgent(
     name="safety_ethics_agent",
     description=(
         "Performs conservative safety and policy checks. Uses Listener output "

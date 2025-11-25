@@ -1,13 +1,15 @@
-# agents/therapy_coach/therapy_coach_agent.py
+# agents/therapy_coach_agent/agent.py
 
 import os
+from dotenv import load_dotenv, find_dotenv
 
 from google.adk.agents import LlmAgent
 
 from schemas import TherapyPlan
 
-DEFAULT_MODEL = os.environ.get("OMC_MODEL_NAME", "gemini-2.0-flash")
+_ = load_dotenv(find_dotenv())
 
+DEFAULT_MODEL = os.environ.get("OMHC_MODEL_NAME", "gemini-2.0-flash")
 
 THERAPY_COACH_INSTRUCTION = """
 You are the Therapy Coach Agent in a mental-health support system.

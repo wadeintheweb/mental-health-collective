@@ -1,13 +1,19 @@
-# agents/orchestrator/orchestrator_agent.py
-
+# agents/orchestrator_agent/agent.py
+import sys
+from pathlib import Path
 from typing import List, Optional
 
 from pydantic import ValidationError
 
 from google.genai import types as genai_types
 from google.adk.agents import BaseAgent
-from google.adk.context import CallbackContext
+from google.adk.agents.callback_context import CallbackContext
 from google.adk.events import Event
+
+# Add project root to sys.path
+project_root = str(Path(__file__).resolve().parents[2])
+if project_root not in sys.path:
+    sys.path.append(project_root)
 
 from schemas import (
     SCHEMA_VERSION,
@@ -16,10 +22,10 @@ from schemas import (
     TherapyPlan,
     ResourceResults,
 )
-from agents.listener import listener_agent
-from agents.safety_ethics import safety_ethics_agent
-from agents.therapy_coach import therapy_coach_agent
-from agents.resource_connector import resource_connector_agent
+from agents.listener_agent.agent import listener_agent
+from agents.safety_ethics_agent.agent import safety_ethics_agent
+from agents.therapy_coach_agent.agent import therapy_coach_agent
+from agents.resource_connector_agent.agent import resource_connector_agent
 
 
 ORCHESTRATOR_INSTRUCTION = """

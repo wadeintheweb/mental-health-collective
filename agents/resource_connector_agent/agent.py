@@ -1,6 +1,7 @@
-# agents/resource_connector/resource_connector_agent.py
+# agents/resource_connector_agent/agent.py
 
 import os
+from dotenv import load_dotenv, find_dotenv
 from typing import List
 
 from google.adk.agents import LlmAgent
@@ -16,7 +17,9 @@ except ImportError:  # Older ADK without MCP support
 
 from schemas import ResourceResults
 
-DEFAULT_MODEL = os.environ.get("OMC_MODEL_NAME", "gemini-2.0-flash")
+_ = load_dotenv(find_dotenv())
+
+DEFAULT_MODEL = os.environ.get("OMHC_MODEL_NAME", "gemini-2.0-flash")
 
 # ---------------------------------------------------------------------------
 # Agent instruction
