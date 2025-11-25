@@ -1,9 +1,9 @@
 # agents/orchestrator_agent/agent.py
+
 import sys
 from pathlib import Path
-from typing import List, Optional
-
-from pydantic import ValidationError
+from typing import List, Optional, Type, TypeVar
+from pydantic import BaseModel, ValidationError
 
 from google.genai import types as genai_types
 from google.adk.agents import BaseAgent
@@ -22,11 +22,11 @@ from schemas import (
     TherapyPlan,
     ResourceResults,
 )
+
 from agents.listener_agent.agent import listener_agent
 from agents.safety_ethics_agent.agent import safety_ethics_agent
 from agents.therapy_coach_agent.agent import therapy_coach_agent
 from agents.resource_connector_agent.agent import resource_connector_agent
-
 
 ORCHESTRATOR_INSTRUCTION = """
 You are the Orchestrator Agent for the Open Mental Health Collective system.
@@ -54,48 +54,73 @@ High-level routing:
     the Therapy Coach.
 """
 
+# -----------------------------------------------------------------------------
+# Generic loader helper (fixes the bug)
+# -----------------------------------------------------------------------------
 
-# ---------- helper loaders ----------
+T = TypeVar("T", bound=BaseModel)
+
+
+def _coerce_model(raw: object, model_cls: Type[T]) -> Optional[T]:
+    """
+    Robustly convert a value from session.state into a Pydantic model.
+
+    Handles:
+      - already-a-model
+      - dict
+      - JSON string
+
+    Returns None on any validation error.
+    """
+    if raw is None:
+        return None
+
+    # Already a model instance
+    if isinstance(raw, model_cls):
+        return raw
+
+    # Dict -> validate as object
+    if isinstance(raw, dict):
+        try:
+            return model_cls.model_validate(raw)
+        except ValidationError:
+            return None
+
+    # JSON string
+    if isinstance(raw, str):
+        try:
+            return model_cls.model_validate_json(raw)
+        except ValidationError:
+            return None
+
+    # Anything else: give up
+    return None
+
+
+# -----------------------------------------------------------------------------
+# Typed loaders using the helper
+# -----------------------------------------------------------------------------
 
 
 def _load_listener_output(state: dict) -> Optional[ListenerOutput]:
-    raw = state.get("listener_output")
-    if not raw:
-        return None
-    try:
-        return ListenerOutput.model_validate_json(raw)
-    except ValidationError:
-        return None
+    return _coerce_model(state.get("listener_output"), ListenerOutput)
 
 
 def _load_safety_decision(state: dict) -> Optional[SafetyDecisionV2]:
-    raw = state.get("safety_decision_v2")
-    if not raw:
-        return None
-    try:
-        return SafetyDecisionV2.model_validate_json(raw)
-    except ValidationError:
-        return None
+    return _coerce_model(state.get("safety_decision_v2"), SafetyDecisionV2)
 
 
 def _load_therapy_plan(state: dict) -> Optional[TherapyPlan]:
-    raw = state.get("therapy_plan")
-    if not raw:
-        return None
-    try:
-        return TherapyPlan.model_validate_json(raw)
-    except ValidationError:
-        return None
+    return _coerce_model(state.get("therapy_plan"), TherapyPlan)
 
 
 def _load_resource_results(state: dict) -> Optional[ResourceResults]:
-    raw = state.get("resource_results")
-    if not raw:
-        return None
-    try:
-        return ResourceResults.model_validate_json(raw)
-    except ValidationError:
-        return None
+    return _coerce_model(state.get("resource_results"), ResourceResults)
+
+
+# -----------------------------------------------------------------------------
+# Final response assembly
+# -----------------------------------------------------------------------------
 
 
 def _assemble_final_response(state: dict) -> Optional[str]:
@@ -180,7 +205,9 @@ def _make_text_event(author: str, text: str) -> Event:
     return Event(author=author, content=content)
 
 
-# ---------- orchestrator ----------
+# -----------------------------------------------------------------------------
+# Orchestrator agent
+# -----------------------------------------------------------------------------
 
 
 class MentalHealthOrchestrator(BaseAgent):
@@ -213,6 +240,7 @@ class MentalHealthOrchestrator(BaseAgent):
         state = ctx.session.state
         listener = _load_listener_output(state)
         if not listener:
+            # Fallback if listener_output is missing or invalid
             text = (
                 "I’m having trouble understanding the details of what you shared, "
                 "but I’m glad you reached out. This system cannot provide emergency "
