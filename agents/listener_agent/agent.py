@@ -142,7 +142,7 @@ Your entire response must be valid JSON conforming to the schema above.
 Do NOT include explanations or text outside the JSON object.
 """
 
-root_agent = LlmAgent(
+listener_agent = LlmAgent(
     name="listener_agent",
     model=DEFAULT_MODEL,
     instruction=LISTENER_INSTRUCTION,

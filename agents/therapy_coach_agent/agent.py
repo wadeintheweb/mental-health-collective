@@ -68,7 +68,7 @@ services, or crisis resources.
 Output ONLY the TherapyPlan JSON object. No extra commentary.
 """
 
-root_agent = LlmAgent(
+therapy_coach_agent = LlmAgent(
     name="therapy_coach_agent",
     model=DEFAULT_MODEL,
     instruction=THERAPY_COACH_INSTRUCTION,
