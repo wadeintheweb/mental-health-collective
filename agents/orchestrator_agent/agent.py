@@ -1,7 +1,5 @@
 # agents/orchestrator_agent/agent.py
 
-import sys
-from pathlib import Path
 from typing import List, Optional, Type, TypeVar
 from pydantic import BaseModel, ValidationError
 
@@ -9,11 +7,6 @@ from google.genai import types as genai_types
 from google.adk.agents import BaseAgent
 from google.adk.agents.callback_context import CallbackContext
 from google.adk.events import Event
-
-# Add project root to sys.path - REMOVED during refactor
-# project_root = str(Path(__file__).resolve().parents[2])
-# if project_root not in sys.path:
-#     sys.path.append(project_root)
 
 from schemas import (
     SCHEMA_VERSION,

@@ -3,25 +3,9 @@
 from __future__ import annotations
 
 import os
-import sys
-from pathlib import Path
-
 from dotenv import load_dotenv, find_dotenv
-from enum import Enum
-from typing import AsyncGenerator, List, Optional
 
-from typing_extensions import override
-from pydantic import BaseModel, Field
-
-from google.adk.agents import BaseAgent, LlmAgent
-from google.adk.agents.invocation_context import InvocationContext
-from google.adk.events import Event
-# from google.adk.tools import google_search  # built-in Google Search tool - REMOVED unused import
-
-# Add project root to sys.path - REMOVED during refactor
-# project_root = str(Path(__file__).resolve().parents[2])
-# if project_root not in sys.path:
-#     sys.path.append(project_root)
+from google.adk.agents import LlmAgent
 
 from schemas import (
     SCHEMA_VERSION,
