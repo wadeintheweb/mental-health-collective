@@ -7,10 +7,10 @@ from dotenv import load_dotenv, find_dotenv
 
 from google.adk.agents import LlmAgent
 
-# Add project root to sys.path
-project_root = str(Path(__file__).resolve().parents[2])
-if project_root not in sys.path:
-    sys.path.append(project_root)
+# Add project root to sys.path - REMOVED during refactor
+# project_root = str(Path(__file__).resolve().parents[2])
+# if project_root not in sys.path:
+#     sys.path.append(project_root)
 
 from schemas import TherapyPlan
 

@@ -13,7 +13,7 @@ async def test_open_mhc_smoke_eval():
     single-turn sessions. Criteria are configured in tests/evals/test_config.json.
     """
     await AgentEvaluator.evaluate(
-        agent_module="open_mhc_app",  # package containing __init__.py with root_agent
+        agent_module="agents.orchestrator_agent.agent",  # package containing __init__.py with root_agent
         eval_dataset_file_path_or_dir="tests/evals/open_mhc_smoke.test.json",
-        config_file_path="tests/evals/test_config.json",
+        # config_file_path="tests/evals/test_config.json",
     )

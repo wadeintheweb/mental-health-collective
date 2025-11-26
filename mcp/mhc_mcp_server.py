@@ -7,7 +7,7 @@ from mcp.server.fastmcp import FastMCP
 mcp = FastMCP("omc-mental-health-resources")
 
 
-@mcp.tool
+@mcp.tool()
 def list_crisis_hotlines(country_code: str) -> List[Dict[str, str]]:
     """
     Return a small list of general crisis hotline resources for the given

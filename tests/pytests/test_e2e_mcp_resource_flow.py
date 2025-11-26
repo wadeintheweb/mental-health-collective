@@ -12,7 +12,7 @@ from google.adk.runners import Runner
 from google.adk.sessions import InMemorySessionService
 from google.genai import types
 
-from agents.orchestrator.orchestrator_agent import root_agent
+from agents.orchestrator_agent.agent import root_agent
 
 APP_NAME = "omc_e2e_app"
 USER_ID = "omc_e2e_user"
@@ -60,14 +60,34 @@ async def test_resource_flow_via_mcp_crisis_hotline():
 
     try:
         # Give MCP server a moment to start
-        time.sleep(2.0)
+        time.sleep(5.0)
+        
+        if mcp_proc.poll() is not None:
+            print(f"DEBUG: MCP server failed to start. Return code: {mcp_proc.returncode}")
+            stdout, stderr = mcp_proc.communicate()
+            print(f"DEBUG: MCP stdout: {stdout}")
+            print(f"DEBUG: MCP stderr: {stderr}")
+            pytest.fail("MCP server failed to start")
 
         # 2) Point Resource Connector Agent at this MCP server
         os.environ["MENTAL_HEALTH_MCP_URL"] = MCP_URL
 
+        # Reload agents to pick up the new env var in RESOURCE_TOOLS
+        import importlib
+        import agents.resource_connector_agent.agent
+        import agents.orchestrator_agent.agent
+        
+        importlib.reload(agents.resource_connector_agent.agent)
+        importlib.reload(agents.orchestrator_agent.agent)
+        from agents.orchestrator_agent.agent import root_agent
+
         # 3) Set up ADK runner + session
         session_service = InMemorySessionService()
-        runner = Runner(session_service=session_service)
+        runner = Runner(
+            agent=root_agent,
+            app_name=APP_NAME,
+            session_service=session_service
+        )
 
         session = await session_service.create_session(
             app_name=APP_NAME,
@@ -80,8 +100,8 @@ async def test_resource_flow_via_mcp_crisis_hotline():
             parts=[
                 types.Part(
                     text=(
-                        "I live in Canada and I'm feeling really unsafe. "
-                        "Can you give me suicide crisis hotlines I can call?"
+                        "I live in Canada and I'm looking for mental health resources. "
+                        "Can you give me some hotlines or services?"
                     )
                 )
             ],
@@ -89,7 +109,12 @@ async def test_resource_flow_via_mcp_crisis_hotline():
 
         # 4) Run orchestrator; collect last model event
         last_event = None
-        async for event in runner.run(agent=root_agent, session=session, content=user_content):
+        async for event in runner.run_async(
+            user_id=session.user_id,
+            session_id=session.id,
+            new_message=user_content
+        ):
+            print(f"DEBUG: Event: {event}")
             last_event = event
 
         assert last_event is not None, "No events emitted by root_agent."

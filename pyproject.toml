@@ -5,6 +5,7 @@ description = "Open Mental Health Collective (OMHC) is a multi-agent, non-clinic
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
+    "google-adk>=1.19.0",
     "google-cloud-aiplatform[adk,agent-engines]>=1.128.0",
     "google-genai>=1.52.0",
     "mcp[cli]>=1.22.0",

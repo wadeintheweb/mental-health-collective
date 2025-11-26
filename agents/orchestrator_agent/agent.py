@@ -10,10 +10,10 @@ from google.adk.agents import BaseAgent
 from google.adk.agents.callback_context import CallbackContext
 from google.adk.events import Event
 
-# Add project root to sys.path
-project_root = str(Path(__file__).resolve().parents[2])
-if project_root not in sys.path:
-    sys.path.append(project_root)
+# Add project root to sys.path - REMOVED during refactor
+# project_root = str(Path(__file__).resolve().parents[2])
+# if project_root not in sys.path:
+#     sys.path.append(project_root)
 
 from schemas import (
     SCHEMA_VERSION,
@@ -225,6 +225,7 @@ class MentalHealthOrchestrator(BaseAgent):
     resource_connector_agent: BaseAgent = resource_connector_agent
     instruction: str = ""
 
+
     async def _run_async_impl(self, ctx: CallbackContext):
         state = ctx.session.state
 
@@ -328,6 +329,8 @@ class MentalHealthOrchestrator(BaseAgent):
 
         # Fallback: unknown intent type (should not occur if schema is respected)
         return
+        
+
 
 
 root_agent = MentalHealthOrchestrator(

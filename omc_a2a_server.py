@@ -5,7 +5,7 @@ import os
 import uvicorn
 from google.adk.a2a.utils.agent_to_a2a import to_a2a
 
-from agents.orchestrator import root_agent
+from agents import root_agent
 
 """
 Expose the OMHC orchestrator as an Agent2Agent (A2A) endpoint.

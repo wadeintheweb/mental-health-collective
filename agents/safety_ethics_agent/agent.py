@@ -16,12 +16,12 @@ from pydantic import BaseModel, Field
 from google.adk.agents import BaseAgent, LlmAgent
 from google.adk.agents.invocation_context import InvocationContext
 from google.adk.events import Event
-from google.adk.tools import google_search  # built-in Google Search tool
+# from google.adk.tools import google_search  # built-in Google Search tool - REMOVED unused import
 
-# Add project root to sys.path
-project_root = str(Path(__file__).resolve().parents[2])
-if project_root not in sys.path:
-    sys.path.append(project_root)
+# Add project root to sys.path - REMOVED during refactor
+# project_root = str(Path(__file__).resolve().parents[2])
+# if project_root not in sys.path:
+#     sys.path.append(project_root)
 
 from schemas import (
     SCHEMA_VERSION,
