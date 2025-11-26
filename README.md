@@ -255,61 +255,32 @@ flowchart LR
   STATE <--> ORCH
 ```
 
-### 3.2 Typical “ambiguous → clarify → exercise” scenario
+**How to read this:**
 
-**Turn 1 (ambiguous intent):**
-User: “I don’t really know what I want from this. Nothing is exactly wrong, but I feel off and empty.”
+* **Clients**:
 
-* Listener outputs `user_intent="unknown"`, `risk_level="low"`.
-* Safety & Ethics is **not** called (low risk, no crisis intent).
-* Orchestrator **does not** call Therapy Coach.
-* Orchestrator returns a **clarifying message** only (“Would you like to talk more, try an exercise, or explore resources?”).
+  * End users (via ADK web UI) and external systems (via the A2A client agent) both send turns into the **Orchestrator**.
 
-**Turn 2 (user requests a grounding exercise):**
-User: “I think I’d like to try a small grounding exercise.”
+* **Orchestrator (custom BaseAgent)**:
 
-* Listener now outputs `user_intent="skills_practice"`, `risk_level="low"`.
-* Safety & Ethics is still not needed (low risk).
-* Orchestrator calls Therapy Coach (self-help allowed).
-* Therapy Coach produces a `TherapyPlan` (e.g., simple grounding steps).
-* Orchestrator assembles a **single final response** combining:
+  * Always calls **Listener** first and stores `listener_output` in **shared state**.
+  * Checks whether **Safety & Ethics** must run (based on risk or crisis intent).
+  * If **Safety** sets `block_reply`, it assembles a **crisis-only** response and stops.
+  * Otherwise, branches on **user_intent**:
 
-  * brief reflection
-  * one small grounding exercise
-  * a safety disclaimer (“not emergency care; contact emergency services or crisis lines if you might hurt yourself or someone else”).
+    * `unknown` → clarification only (no new agents).
+    * `resource_navigation` / `crisis_support` → **Resource Connector**.
+    * `check_in` / `psychoeducation` / `skills_practice` → **Therapy Coach**, but only if `allow_self_help` is true.
 
-### 3.3 Multi-turn crisis scenario (non-imminent → imminent)
+* **Resource Connector**:
 
-**Turn 1 (non-imminent suicidal ideation):**
-User: “Sometimes I think everyone would be better off if I disappeared. I’m not going to do anything tonight, but I feel hopeless.”
+  * Uses **Google Search** and the **MCP resource server** (e.g., `list_crisis_hotlines`) to populate `resource_results` in state.
 
-* Listener: `user_intent="crisis_support"`, `risk_level="medium"`.
-* Safety & Ethics runs, returns `SafetyDecisionV2`:
+* **Therapy Coach**:
 
-  * `overall_risk_level="medium"`
-  * `block_reply=false`, `allow_self_help=true`, `should_escalate_to_human=true`
-  * `policy_tags=["suicidality_non_imminent"]`.
-* Orchestrator may allow **very gentle self-help** (e.g., one grounding technique) while strongly encouraging the user to contact human support (friends, professionals, crisis lines).
-* Final message: validation, small coping step, clear escalation language.
+  * Writes a brief, guarded **TherapyPlan** into state when allowed by Safety.
 
-**Turn 2 (escalation to imminent plan):**
-User: “I actually bought the pills and chose a time for tonight. I don’t think I can keep doing this.”
-
-* Listener: `user_intent="crisis_support"`, `risk_level="crisis"`, `immediate_escalation_required=true`.
-* Safety & Ethics runs, returns `SafetyDecisionV2`:
-
-  * `overall_risk_level="crisis"`
-  * `block_reply=true`
-  * `allow_self_help=false`
-  * `should_escalate_to_human=true`
-  * `escalation_channel="emergency_services"`
-  * `policy_tags=["suicidality_imminent"]`
-  * optional `user_message_override` with short crisis message.
-* Orchestrator’s **safety ceiling** detects `block_reply==true`:
-
-  * Does **not** call Therapy Coach or Resource Connector.
-  * Sends a **crisis-only message** directing the user to emergency services/crisis hotlines.
-  * Turn ends; no exercises or self-help are provided.
+* The **Orchestrator** reads from **STATE** (Listener + Safety + Therapy + Resources) and assembles the final, user-facing message.
 
 ---
 
