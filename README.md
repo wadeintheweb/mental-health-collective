@@ -185,74 +185,56 @@ OMHC uses a **multi-agent** architecture with a single orchestrating agent and s
 The following Mermaid diagram illustrates the **routing and data flow** between agents and shared state:
 
 ```mermaid
+
 flowchart LR
-  %% =========================
-  %% Clients
-  %% =========================
   subgraph Clients
-    U[End user<br/>(ADK web UI)]
-    AC[A2A client agent]
+    U[End user]
+    AC[A2A client]
   end
 
-  %% =========================
-  %% OMHC Agent App (ADK)
-  %% =========================
-  subgraph OMHC_App[Open Mental Health Collective (ADK app)]
-    ORCH[Orchestrator<br/>(custom BaseAgent)]
-    LIST[Listener Agent<br/>(LLM)]
-    SAFE[Safety & Ethics Agent<br/>(LLM)]
-    COACH[Therapy Coach Agent<br/>(LLM)]
-    RES[Resource Connector Agent<br/>(LLM + tools)]
-    STATE[(Shared state<br/>(session.state))]
+  subgraph OMHC_App
+    ORCH[Orchestrator - custom agent]
+    LIST[Listener agent]
+    SAFE[Safety and Ethics agent]
+    COACH[Therapy Coach agent]
+    RES[Resource Connector agent]
+    STATE[(Shared state)]
   end
 
-  %% =========================
-  %% Tools and external services
-  %% =========================
   subgraph Tools_and_Services
     SEARCH[Google Search tool]
-    MCP[MCP resource server<br/>e.g. list_crisis_hotlines]
+    MCP[MCP resource server]
   end
 
-  %% =========================
-  %% Client entry points
-  %% =========================
   U --> ORCH
   AC --> ORCH
 
-  %% =========================
-  %% Orchestrator core routing
-  %% =========================
   ORCH --> LIST
   LIST --> STATE
 
-  %% Decision: run Safety?
-  ORCH --> D_SAFETY{Risk or crisis intent?}
-  D_SAFETY -- yes --> SAFE
+  ORCH --> D_SAFETY
+  D_SAFETY{Run safety?} -->|yes| SAFE
+  D_SAFETY -->|no| D_INTENT
+
   SAFE --> STATE
-  SAFE --> D_BLOCK{Safety says block reply?}
-  D_SAFETY -- no --> D_INTENT
+  SAFE --> D_BLOCK
+  D_BLOCK{Block reply?} -->|yes| ORCH
+  D_BLOCK -->|no| D_INTENT
 
-  %% If blocked, orchestrator assembles crisis-only reply
-  D_BLOCK -- yes --> ORCH
-  D_BLOCK -- no --> D_INTENT
-
-  %% Intent-based routing
   D_INTENT{User intent}
-  D_INTENT -- "unknown" --> ORCH
-  D_INTENT -- "resource / crisis support" --> RES
-  D_INTENT -- "check-in / psychoeducation / skills" --> COACH
+  D_INTENT -->|unknown| ORCH
+  D_INTENT -->|resource or crisis| RES
+  D_INTENT -->|check in or skills| COACH
 
-  %% Agents write back into shared state
   RES --> STATE
   COACH --> STATE
 
-  %% Resource Connector tools
   RES --> SEARCH
   RES --> MCP
 
-  %% Orchestrator reads state and assembles final reply
-  STATE <--> ORCH
+  STATE --> ORCH
+  ORCH --> U
+
 ```
 
 **How to read this:**
