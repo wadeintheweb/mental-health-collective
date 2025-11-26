@@ -1,14 +1,113 @@
-# Capstone Project for Google x Kaggle 5-Day AI Agents Intensive Course (2025)
-## Category: Agents for Good (Healthcare)
-### Project: Open Mental Health Collective (OMHC)
+<div align="center">
 
-**System Type:** Research prototype – non-clinical, AI-based mental health support  
-**Technology:** Google Agent Development Kit (ADK), Vertex AI Agent Engine    
-**Intended Users:** Adults (18+) experiencing mild to moderate distress  
+# Open Mental Health Collective (OMHC)
+
+**Multi-Agent Mental Health Support System**
+
+[![Python 3.13+](https://img.shields.io/badge/python-3.13+-blue.svg)](https://www.python.org/downloads/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Tests](https://img.shields.io/badge/tests-passing-brightgreen.svg)]()
+[![Code style: ruff](https://img.shields.io/badge/code%20style-ruff-000000.svg)](https://github.com/astral-sh/ruff)
+
+**Google x Kaggle 5-Day AI Agents Intensive Course (2025) - Capstone Project**
+
+[Features](#-key-features) •
+[Quick Start](#-quick-start) •
+[Architecture](#-high-level-architecture) •
+[Documentation](#-table-of-contents) •
+[Contributing](CONTRIBUTING.md)
+
+</div>
 
 ---
 
-## 1. Purpose and Scope
+> ⚠️ **Research Prototype**: This is a non-clinical mental health support system for research and educational purposes only. Not a substitute for professional care or emergency services.
+
+---
+
+## 📖 Table of Contents
+
+- [Key Features](#-key-features)
+- [Quick Start](#-quick-start)
+- [Purpose and Scope](#-purpose-and-scope)
+- [Architecture](#-high-level-architecture)
+- [Data Flow](#-data-flow-and-agent-interaction)
+- [Safety Mechanisms](#️-safety-mechanisms)
+- [Testing & Evaluation](#-evaluation-testing-and-monitoring)
+- [Limitations](#️-limitations-and-residual-risks)
+- [Future Work](#-future-work)
+- [Technology Stack](#️-technology-stack)
+- [License](#-license)
+- [Citation](#-citation)
+
+## ✨ Key Features
+
+- 🤖 **Multi-Agent Architecture**: Specialized agents for listening, safety, therapy coaching, and resource connection
+- 🛡️ **Safety-First Design**: Multi-layered safety mechanisms with conservative risk assessment
+- 🔍 **Auditable & Testable**: Comprehensive test suite with risk-based evaluation
+- 🌐 **MCP & A2A Integration**: Model Context Protocol and Agent2Agent interoperability
+- 📊 **Structured State Management**: Type-safe Pydantic schemas for all agent outputs
+- 🎯 **Intent-Aware Routing**: Smart routing based on user intent and risk level
+- 🚨 **Crisis Detection**: Automatic escalation for high-risk situations
+- 📝 **Comprehensive Documentation**: Detailed technical documentation and testing guides
+
+## 🚀 Quick Start
+
+### Prerequisites
+- Python 3.13+
+- Google Cloud account with Gemini API access
+- Git
+
+### Installation
+
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/yourusername/mental-health-collective.git
+   cd mental-health-collective
+   ```
+
+2. **Set up virtual environment**
+   ```bash
+   python -m venv .venv
+   source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+   ```
+
+3. **Install dependencies**
+   ```bash
+   pip install -e .
+   pip install -e ".[dev]"  # For development tools
+   ```
+
+4. **Configure environment**
+   ```bash
+   cp .env.example .env
+   # Edit .env and add your GOOGLE_API_KEY
+   ```
+
+5. **Run tests**
+   ```bash
+   pytest
+   ```
+
+### Basic Usage
+
+```python
+from agents import root_agent
+from google.adk.runners import Runner
+
+# Initialize runner
+runner = Runner(agent=root_agent)
+
+# Start conversation
+response = runner.run("I've been feeling stressed lately")
+print(response)
+```
+
+For detailed usage, see [Testing & Evaluation](#-testing--evaluation-expanded).
+
+---
+
+## 🎯 Purpose and Scope
 
 ### 1.1 System purpose
 
@@ -37,7 +136,7 @@ These limitations are stated explicitly in all agent prompts and in user-facing 
 
 ---
 
-## 2. High-Level Architecture
+## 🏗️ High-Level Architecture
 
 OMHC uses a **multi-agent** architecture with a single orchestrating agent and several specialized subagents. All agents are implemented as ADK agents (primarily `LlmAgent` and one `BaseAgent` orchestrator), sharing state via `session.state`.
 
@@ -79,7 +178,7 @@ OMHC uses a **multi-agent** architecture with a single orchestrating agent and s
 
 ---
 
-## 3. Data Flow and Agent Interaction
+## 🔄 Data Flow and Agent Interaction
 
 ### 3.1 Architecture flowchart
 
@@ -204,7 +303,7 @@ User: “I actually bought the pills and chose a time for tonight. I don’t thi
 
 ---
 
-## 4. Safety Mechanisms
+## 🛡️ Safety Mechanisms
 
 ### 4.1 Listener risk screen (first line of defense)
 
@@ -272,7 +371,7 @@ This compartmentalization reduces the risk of an LLM “slipping” into unsafe 
 
 ---
 
-## 5. Evaluation, Testing, and Monitoring
+## 🧪 Evaluation, Testing, and Monitoring
 
 ### 5.1 Evalsets and rubric-based checks
 
@@ -336,7 +435,7 @@ These signals can support:
 
 ---
 
-## 6. Limitations and Residual Risks
+## ⚠️ Limitations and Residual Risks
 
 Despite the safety architecture, important limitations remain:
 
@@ -356,7 +455,7 @@ For these reasons, we view OMHC as:
 
 ---
 
-## 7. Future Work
+## 🔮 Future Work
 
 Potential improvements:
 
@@ -376,7 +475,7 @@ Potential improvements:
 
    * Provide a more natural conversational user interface.
 
-## 8. Technology Stack (Open Mental Health Collective)
+## 🛠️ Technology Stack
 
 8.1 **Core Language & Data Modeling**
 
@@ -518,7 +617,7 @@ Potential improvements:
   * Standard Google auth (e.g., `GOOGLE_APPLICATION_CREDENTIALS`) for cloud access.
 
 
-## 9. Testing & Evaluation (Expanded)
+## ✅ Testing & Evaluation (Expanded)
 
 The OMHC system has three main layers of testing:
 
@@ -789,3 +888,58 @@ Together, these give you:
 * Fast feedback for code changes.
 * Safety regression checks for high-risk behaviors.
 * Confidence that the **managed, deployed** OMHC agent still obeys the same guardrails you designed and tested locally.
+
+---
+
+## 📜 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 📝 Citation
+
+If you use this project in your research, please cite:
+
+```bibtex
+@misc{omhc2025,
+  author = {Your Name},
+  title = {Open Mental Health Collective: A Multi-Agent Mental Health Support System},
+  year = {2025},
+  publisher = {GitHub},
+  journal = {GitHub repository},
+  howpublished = {\url{https://github.com/yourusername/mental-health-collective}},
+  note = {Google x Kaggle 5-Day AI Agents Intensive Course Capstone Project}
+}
+```
+
+## 🙏 Acknowledgments
+
+- **Google x Kaggle** for the 5-Day AI Agents Intensive Course
+- **Google ADK Team** for the Agent Development Kit
+- **Mental Health Community** for inspiration and guidance
+
+## 📞 Contact & Support
+
+- **Issues**: [GitHub Issues](https://github.com/yourusername/mental-health-collective/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/yourusername/mental-health-collective/discussions)
+- **Security**: See [SECURITY.md](SECURITY.md)
+- **Contributing**: See [CONTRIBUTING.md](CONTRIBUTING.md)
+
+---
+
+**⚠️ Crisis Resources**
+
+If you or someone you know is in crisis:
+- **US**: Call or text 988 (Suicide & Crisis Lifeline)
+- **Canada**: Call or text 988 (Talk Suicide Canada)
+- **UK**: Call 116 123 (Samaritans)
+- **International**: [Find your local crisis line](https://findahelpline.com/)
+
+---
+
+<div align="center">
+
+Made with ❤️ for mental health accessibility
+
+**[⬆ Back to Top](#open-mental-health-collective-omhc)**
+
+</div>

@@ -18,6 +18,8 @@ dev = [
     "pytest>=9.0.1",
     "pytest-asyncio>=1.3.0",
     "uvicorn>=0.38.0",
+    "ruff>=0.8.0",
+    "mypy>=1.13.0",
 ]
 
 [tool.pytest.ini_options]
@@ -28,3 +30,36 @@ python_classes = ["Test*"]
 python_functions = ["test_*"]
 asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function"
+markers = [
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+    "e2e: end-to-end integration tests",
+    "remote: tests that require remote services",
+    "eval_low_risk: low risk evaluation tests",
+    "eval_medium_risk: medium risk evaluation tests",
+    "eval_crisis: crisis evaluation tests",
+    "eval_high_risk: high risk evaluation tests",
+    "eval_unknown_intent: unknown intent evaluation tests",
+]
+
+[tool.ruff]
+# Enable pycodestyle (`E`) and Pyflakes (`F`) codes by default
+select = ["E", "F", "I", "N", "W", "UP"]
+ignore = []
+fixable = ["ALL"]
+unfixable = []
+line-length = 88
+target-version = "py313"
+
+[tool.ruff.mccabe]
+max-complexity = 10
+
+[tool.mypy]
+python_version = "3.13"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = false
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "tests.*"
+disallow_untyped_defs = false

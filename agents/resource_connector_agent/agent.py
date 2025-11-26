@@ -115,9 +115,12 @@ def _build_resource_tools() -> List[BaseTool]:
             params = SseConnectionParams(url=mcp_url)
             mcp_toolset = MCPToolset.from_config(params)
             tools.extend(mcp_toolset.get_tools())
-        except Exception:
+        except Exception as e:
             # Fail closed: if MCP setup is misconfigured, we still have google_search.
-            # In production, you should log this via ADK logging/monitoring.
+            # Log the error for debugging but continue with available tools.
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.warning(f"MCP toolset initialization failed: {e}")
             pass
 
     return tools
