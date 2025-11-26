@@ -185,64 +185,74 @@ OMHC uses a **multi-agent** architecture with a single orchestrating agent and s
 The following Mermaid diagram illustrates the **routing and data flow** between agents and shared state:
 
 ```mermaid
-flowchart TD
-  U[User]
-  ORCH[Orchestrator / root_agent]
-  LIST[Listener Agent]
-  SAFE[Safety and Ethics Agent]
-  RES[Resource Connector Agent]
-  COACH[Therapy Coach Agent]
-
-  subgraph SESSION[Session State]
-    SV[schema_version]
-    LO[listener_output]
-    SD[safety_decision_v2]
-    TP[therapy_plan]
-    RR[resource_results]
+flowchart LR
+  %% =========================
+  %% Clients
+  %% =========================
+  subgraph Clients
+    U[End user<br/>(ADK web UI)]
+    AC[A2A client agent]
   end
 
-  U -->|user message| ORCH
+  %% =========================
+  %% OMHC Agent App (ADK)
+  %% =========================
+  subgraph OMHC_App[Open Mental Health Collective (ADK app)]
+    ORCH[Orchestrator<br/>(custom BaseAgent)]
+    LIST[Listener Agent<br/>(LLM)]
+    SAFE[Safety & Ethics Agent<br/>(LLM)]
+    COACH[Therapy Coach Agent<br/>(LLM)]
+    RES[Resource Connector Agent<br/>(LLM + tools)]
+    STATE[(Shared state<br/>(session.state))]
+  end
 
-  ORCH -->|run Listener| LIST
-  LIST -->|write listener_output| LO
-  LIST -->|events| ORCH
-  ORCH -->|read listener_output| LO
+  %% =========================
+  %% Tools and external services
+  %% =========================
+  subgraph Tools_and_Services
+    SEARCH[Google Search tool]
+    MCP[MCP resource server<br/>e.g. list_crisis_hotlines]
+  end
 
-  ORCH --> SAFETY_DECISION{Run Safety}
-  SAFETY_DECISION -->|yes| SAFE
-  SAFETY_DECISION -->|no| AFTER_SAFETY[After Safety]
+  %% =========================
+  %% Client entry points
+  %% =========================
+  U --> ORCH
+  AC --> ORCH
 
-  SAFE -->|write safety_decision_v2| SD
-  SAFE -->|events| ORCH
-  ORCH -->|read safety_decision_v2| SD
+  %% =========================
+  %% Orchestrator core routing
+  %% =========================
+  ORCH --> LIST
+  LIST --> STATE
 
-  ORCH --> BLOCK_CEILING{Block reply}
-  BLOCK_CEILING -->|yes| CRISIS_OUT[Crisis only response]
-  CRISIS_OUT -->|final text| U
-  BLOCK_CEILING -->|no| AFTER_SAFETY
+  %% Decision: run Safety?
+  ORCH --> D_SAFETY{Risk or crisis intent?}
+  D_SAFETY -- yes --> SAFE
+  SAFE --> STATE
+  SAFE --> D_BLOCK{Safety says block reply?}
+  D_SAFETY -- no --> D_INTENT
 
-  AFTER_SAFETY --> UNKNOWN_INTENT{Intent unknown}
-  UNKNOWN_INTENT -->|yes| CLARIFY[Clarify intent only]
-  CLARIFY -->|final text| U
-  UNKNOWN_INTENT -->|no| ROUTE_INTENT[Route by intent]
+  %% If blocked, orchestrator assembles crisis-only reply
+  D_BLOCK -- yes --> ORCH
+  D_BLOCK -- no --> D_INTENT
 
-  ROUTE_INTENT -->|resource or crisis| RESOURCE_PATH[Resource path]
-  RESOURCE_PATH --> RES
-  RES -->|write resource_results| RR
-  RES -->|events| ORCH
-  ORCH --> RESOURCE_REPLY[Assemble reflection and resources and disclaimer]
-  RESOURCE_REPLY -->|final text| U
+  %% Intent-based routing
+  D_INTENT{User intent}
+  D_INTENT -- "unknown" --> ORCH
+  D_INTENT -- "resource / crisis support" --> RES
+  D_INTENT -- "check-in / psychoeducation / skills" --> COACH
 
-  ROUTE_INTENT -->|check_in or skills or info| THERAPY_PATH[Therapy path]
-  THERAPY_PATH --> CHECK_SELF_HELP{Allow self help}
-  CHECK_SELF_HELP -->|no| NO_COACH[Assemble reflection and disclaimer]
-  NO_COACH -->|final text| U
-  CHECK_SELF_HELP -->|yes| COACH
-  COACH -->|write therapy_plan| TP
-  COACH -->|events| ORCH
-  ORCH --> FINAL_REPLY[Assemble reflection and plan and disclaimer]
-  FINAL_REPLY -->|final text| U
+  %% Agents write back into shared state
+  RES --> STATE
+  COACH --> STATE
 
+  %% Resource Connector tools
+  RES --> SEARCH
+  RES --> MCP
+
+  %% Orchestrator reads state and assembles final reply
+  STATE <--> ORCH
 ```
 
 ### 3.2 Typical “ambiguous → clarify → exercise” scenario
