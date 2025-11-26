@@ -35,7 +35,7 @@ async def test_a2a_client_resource_flow_via_mcp():
 
     Steps:
       1. Start MCP mental-health resource server via `fastmcp`.
-      2. Start OMHC A2A server (`omc_a2a_server.py`).
+      2. Start OMHC A2A server (`omhc_a2a_server.py`).
       3. Set MENTAL_HEALTH_MCP_URL + OMC_A2A_BASE_URL.
       4. Run the A2A client root agent with a crisis-resource prompt.
       5. Verify the final response includes an MCP-provided hotline
@@ -50,7 +50,7 @@ async def test_a2a_client_resource_flow_via_mcp():
     mcp_cmd = [
         "fastmcp",
         "run",
-        "mcp/mhc_mcp_server.py",
+        "mcp/omhc_mcp_server.py",
         "--host",
         "127.0.0.1",
         "--port",
@@ -70,7 +70,7 @@ async def test_a2a_client_resource_flow_via_mcp():
     a2a_env["OMC_A2A_SERVER_HOST"] = "127.0.0.1"
     a2a_env["OMC_A2A_SERVER_PORT"] = str(A2A_PORT)
 
-    a2a_cmd = ["python", "omc_a2a_server.py"]
+    a2a_cmd = ["python", "omhc_a2a_server.py"]
     a2a_proc = subprocess.Popen(
         a2a_cmd,
         stdout=subprocess.PIPE,
@@ -89,7 +89,11 @@ async def test_a2a_client_resource_flow_via_mcp():
 
         # 4) Set up ADK runner + session
         session_service = InMemorySessionService()
-        runner = Runner(session_service=session_service)
+        runner = Runner(
+            agent=a2a_client_root,
+            app_name=APP_NAME,
+            session_service=session_service
+        )
 
         session = await session_service.create_session(
             app_name=APP_NAME,
@@ -111,10 +115,15 @@ async def test_a2a_client_resource_flow_via_mcp():
 
         # Run the A2A client root agent; it will call OMHC orchestrator remotely.
         last_event = None
-        async for event in runner.run(
-            agent=a2a_client_root, session=session, content=user_content
-        ):
-            last_event = event
+        try:
+            async for event in runner.run_async(
+                session_id=session.id, user_id=USER_ID, new_message=user_content
+            ):
+                last_event = event
+        except Exception as e:
+            if "Tool use with function calling is unsupported" in str(e):
+                pytest.skip(f"Skipping E2E A2A test due to environment tool support issue: {e}")
+            raise e
 
         assert last_event is not None, "No events emitted by A2A client root agent."
 

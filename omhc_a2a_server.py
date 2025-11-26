@@ -1,4 +1,4 @@
-# omc_a2a_server.py
+# omhc_a2a_server.py
 
 import os
 

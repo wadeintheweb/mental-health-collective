@@ -1,4 +1,4 @@
-# mcp/mhc_mcp_server.py
+# mcp/omhc_mcp_server.py
 
 from typing import List, Dict
 from mcp.server.fastmcp import FastMCP
@@ -69,7 +69,7 @@ def list_crisis_hotlines(country_code: str) -> List[Dict[str, str]]:
 
 if __name__ == "__main__":
     # Run the MCP server. With FastMCP, you'll typically run via CLI:
-    #   fastmcp run mcp/mhc_mcp_server.py --host 0.0.0.0 --port 8002 --transport sse
+    #   fastmcp run mcp/omhc_mcp_server.py --host 0.0.0.0 --port 8002 --transport sse
     #
     # This bare call is often enough for local stdio-based testing; see MCP
     # docs for transport details.

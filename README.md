@@ -441,7 +441,7 @@ Potential improvements:
     * General web search for the Resource Connector Agent.
 * **Model Context Protocol (MCP)**
 
-  * **MCP server** (`mcp/mhc_mcp_server.py`) built with a FastMCP-style framework:
+  * **MCP server** (`mcp/omhc_mcp_server.py`) built with a FastMCP-style framework:
 
     * Example tool: `list_crisis_hotlines(country_code)`.
   * **ADK MCP integration**
@@ -453,7 +453,7 @@ Potential improvements:
 
 * **A2A Server Wrapper**
 
-  * `omc_a2a_server.py`:
+  * `omhc_a2a_server.py`:
 
     * Uses `to_a2a(root_agent, port=...)` to expose the orchestrator as an A2A-compliant HTTP endpoint.
     * Served via **Uvicorn** (FastAPI app under the hood).
@@ -628,7 +628,7 @@ Both E2E tests share a pattern:
 1. **Start MCP server** as a child process:
 
    ```bash
-   fastmcp run mcp/mhc_mcp_server.py \
+   fastmcp run mcp/omhc_mcp_server.py \
      --host 129.0.0.1 \
      --port 8002 \
      --transport sse

@@ -22,7 +22,7 @@ Then interact with this client root agent via the ADK web UI.
 
 _ = load_dotenv(find_dotenv())
 
-# Base URL for the OMHC A2A server; must match how you run `omc_a2a_server.py`.
+# Base URL for the OMHC A2A server; must match how you run `omhc_a2a_server.py`.
 #
 # Example:
 #   OMHC_A2A_SERVER_HOST=127.0.0.1
