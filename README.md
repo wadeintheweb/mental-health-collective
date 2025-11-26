@@ -511,7 +511,7 @@ Potential improvements:
     * `MCPToolset` + `SseConnectionParams` attach MCP tools to `resource_connector_agent`.
     * Configured via `MENTAL_HEALTH_MCP_URL` environment variable.
 
-8.5 **gent2Agent (A2A) Interoperability**
+8.5 **Agent2Agent (A2A) Interoperability**
 
 * **A2A Server Wrapper**
 
