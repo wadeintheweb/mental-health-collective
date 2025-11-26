@@ -46,7 +46,7 @@ OMHC uses a **multi-agent** architecture with a single orchestrating agent and s
 1. **Orchestrator Agent (root)**
 
    * Routes turns.
-   * Maintains shared state and a schema version (`schema_version = "omc_v2_0_0"`).
+   * Maintains shared state and a schema version (`schema_version = "omhc_v2_0_0"`).
    * Enforces safety policies (via a centralized “safety ceiling”).
    * Assembles a final user-facing message from structured state.
 

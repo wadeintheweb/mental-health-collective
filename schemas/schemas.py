@@ -5,7 +5,7 @@ from typing import List, Literal, Optional
 from pydantic import BaseModel, Field, field_validator
 
 
-SCHEMA_VERSION = "omc_v2_0_0"
+SCHEMA_VERSION = "omhc_v2_0_0"
 
 
 class ListenerRisk(BaseModel):
