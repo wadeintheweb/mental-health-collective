@@ -195,112 +195,222 @@ class MentalHealthOrchestrator(BaseAgent):
     instruction: str = ""
 
 
-    async def _run_async_impl(self, ctx: CallbackContext):
-        state = ctx.session.state
-
-        # Ensure schema version
-        if state.get("schema_version") != SCHEMA_VERSION:
-            state["schema_version"] = SCHEMA_VERSION
-
-        # 1) Listener always first
+    async def _run_listener_phase(self, ctx: CallbackContext):
+        """
+        Execute the listener phase of orchestration.
+        
+        Runs the listener agent, validates its output, and emits a fallback
+        message if the output is missing or invalid.
+        
+        Args:
+            ctx: Callback context containing session state
+            
+        Yields:
+            Events from the listener agent and optional fallback message
+        """
+        # Run listener agent
         async for event in self.listener_agent.run_async(ctx):
-            # Listener's short empathic reply may go to the user
             yield event
-
+        
+        # Load and validate listener output
         state = ctx.session.state
         listener = _load_listener_output(state)
+        
         if not listener:
-            # Fallback if listener_output is missing or invalid
+            # Emit fallback message if listener output is missing or invalid
             text = (
-                "I’m having trouble understanding the details of what you shared, "
-                "but I’m glad you reached out. This system cannot provide emergency "
+                "I'm having trouble understanding the details of what you shared, "
+                "but I'm glad you reached out. This system cannot provide emergency "
                 "help. If you are in immediate danger or think you might hurt "
                 "yourself or someone else, please contact local emergency "
                 "services or a crisis hotline right away."
             )
             yield _make_text_event(author=self.name, text=text)
-            return
 
-        must_run_safety = listener.risk.risk_level != "none" or (
-            listener.user_intent == "crisis_support"
+    async def _run_safety_phase_if_needed(
+        self, ctx: CallbackContext, listener: ListenerOutput
+    ):
+        """
+        Run safety checks if needed based on listener output.
+        
+        Determines whether safety checks are required based on risk level
+        or user intent. If needed, runs the safety agent and validates the
+        output.
+        
+        Args:
+            ctx: Callback context containing session state
+            listener: Listener output from the listener phase
+            
+        Yields:
+            Events from the safety agent if run, or optional fallback message
+        """
+        # Determine if safety check is needed
+        must_run_safety = (
+            listener.risk.risk_level != "none" 
+            or listener.user_intent == "crisis_support"
         )
+        
+        if not must_run_safety:
+            return
+        
+        # Run safety agent
+        async for event in self.safety_agent.run_async(ctx):
+            yield event
+        
+        # Load and validate safety decision
+        state = ctx.session.state
+        safety = _load_safety_decision(state)
+        
+        if not safety:
+            # Emit fallback message if safety decision is missing or invalid
+            text = (
+                "Something went wrong while checking safety. "
+                "To be cautious, I can't provide self-help exercises right now. "
+                "If you are struggling, please consider reaching out to a "
+                "trusted person or a local health professional. "
+                "If you are in immediate danger, contact emergency services "
+                "or a crisis hotline right away."
+            )
+            yield _make_text_event(author=self.name, text=text)
 
-        safety = None
-        if must_run_safety:
-            async for event in self.safety_agent.run_async(ctx):
-                # Safety should only emit JSON, but we yield events for observability
-                yield event
+    async def _handle_safety_ceiling(self, ctx: CallbackContext):
+        """
+        Handle the safety ceiling case (block_reply=true).
+        
+        When safety decision indicates block_reply=true, assembles a
+        crisis-oriented response and terminates the orchestration flow.
+        
+        Args:
+            ctx: Callback context containing session state
+            
+        Yields:
+            Final crisis-oriented event
+        """
+        state = ctx.session.state
+        assembled = _assemble_final_response(state)
+        
+        if not assembled:
+            # Default crisis message if response assembly fails
+            assembled = (
+                "Based on what you've shared, it's really important to reach "
+                "out to real-world support right now. This system cannot "
+                "safely continue with self-help in this moment. "
+                "If you are in immediate danger or feel like you might hurt "
+                "yourself or someone else, please contact local emergency "
+                "services or a crisis hotline immediately."
+            )
+        
+        yield _make_text_event(author=self.name, text=assembled)
 
-            state = ctx.session.state
-            safety = _load_safety_decision(state)
-            if not safety:
-                text = (
-                    "Something went wrong while checking safety. "
-                    "To be cautious, I can’t provide self-help exercises right now. "
-                    "If you are struggling, please consider reaching out to a "
-                    "trusted person or a local health professional. "
-                    "If you are in immediate danger, contact emergency services "
-                    "or a crisis hotline right away."
-                )
-                yield _make_text_event(author=self.name, text=text)
-                return
-
-            # Safety ceiling: block all further content if block_reply is true
-            if safety.block_reply:
-                assembled = _assemble_final_response(state)
-                if not assembled:
-                    assembled = (
-                        "Based on what you’ve shared, it’s really important to reach "
-                        "out to real-world support right now. This system cannot "
-                        "safely continue with self-help in this moment. "
-                        "If you are in immediate danger or feel like you might hurt "
-                        "yourself or someone else, please contact local emergency "
-                        "services or a crisis hotline immediately."
-                    )
-                yield _make_text_event(author=self.name, text=assembled)
-                return
-
+    async def _route_by_intent(
+        self,
+        ctx: CallbackContext,
+        listener: ListenerOutput,
+        safety: Optional[SafetyDecisionV2],
+    ):
+        """
+        Route to appropriate agent based on user intent.
+        
+        Routes the conversation to:
+        - Resource connector for resource_navigation or crisis_support intents
+        - Therapy coach for check_in, psychoeducation, or skills_practice intents
+        - Returns early for unknown intent (listener response already sent)
+        
+        Args:
+            ctx: Callback context containing session state
+            listener: Listener output from the listener phase
+            safety: Safety decision from the safety phase (may be None)
+            
+        Yields:
+            Events from the appropriate agent and final assembled response
+        """
         intent = listener.user_intent
-
+        
         # Unknown intent -> clarify only (Listener's text is already sent)
         if intent == "unknown":
             return
-
+        
         # Resource path (resource_navigation or crisis_support)
         if intent in ("resource_navigation", "crisis_support"):
             async for event in self.resource_connector_agent.run_async(ctx):
                 yield event
-
+            
             state = ctx.session.state
             assembled = _assemble_final_response(state)
             if assembled:
                 yield _make_text_event(author=self.name, text=assembled)
             return
-
+        
         # Therapy path (check_in, psychoeducation, skills_practice)
         if intent in ("check_in", "psychoeducation", "skills_practice"):
+            # Check if self-help is allowed
             allow_self_help = True
-            if must_run_safety:
-                safety = _load_safety_decision(ctx.session.state)
+            if safety:
                 allow_self_help = bool(
-                    safety and safety.allow_self_help and not safety.block_reply
+                    safety.allow_self_help and not safety.block_reply
                 )
-
+            
             if allow_self_help:
                 async for event in self.therapy_coach_agent.run_async(ctx):
                     yield event
-
+            
             state = ctx.session.state
             assembled = _assemble_final_response(state)
             if assembled:
                 yield _make_text_event(author=self.name, text=assembled)
             return
 
-        # Fallback: unknown intent type (should not occur if schema is respected)
-        return
+    async def _run_async_impl(self, ctx: CallbackContext):
+        """
+        Main orchestration flow for the Open Mental Health Collective system.
         
+        Coordinates execution across multiple specialized agents:
+        1. Listener: interprets user input and performs initial risk screening
+        2. Safety & Ethics: evaluates safety and determines if self-help is appropriate
+        3. Resource Connector or Therapy Coach: provides appropriate support
+        
+        The flow implements a "safety ceiling" that blocks self-help content
+        when block_reply=true in the safety decision.
+        
+        Args:
+            ctx: Callback context containing session state
+            
+        Yields:
+            Events from agents and final assembled responses
+        """
+        state = ctx.session.state
+        
+        # Ensure schema version is set
+        if state.get("schema_version") != SCHEMA_VERSION:
+            state["schema_version"] = SCHEMA_VERSION
+        
+        # Phase 1: Run listener
+        async for event in self._run_listener_phase(ctx):
+            yield event
+        
+        # Load listener output after phase completes
+        listener = _load_listener_output(ctx.session.state)
+        if not listener:
+            return  # Early exit with fallback message already emitted
+        
+        # Phase 2: Run safety checks if needed
+        async for event in self._run_safety_phase_if_needed(ctx, listener):
+            yield event
+        
+        # Load safety decision after phase completes (may be None)
+        safety = _load_safety_decision(ctx.session.state)
+        
+        # Phase 3: Handle safety ceiling if block_reply=true
+        if safety and safety.block_reply:
+            async for event in self._handle_safety_ceiling(ctx):
+                yield event
+            return
+        
+        # Phase 4: Route by user intent
+        async for event in self._route_by_intent(ctx, listener, safety):
+            yield event
 
-
+        
 
 root_agent = MentalHealthOrchestrator(
     name="open_mhc_orchestrator",
