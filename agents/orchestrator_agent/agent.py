@@ -17,6 +17,9 @@ from schemas import (
 )
 
 from agents.utils import load_instruction
+from logging_config import configure_logging
+
+logger = configure_logging("omhc.orchestrator")
 
 from agents.listener_agent.agent import listener_agent
 from agents.safety_ethics_agent.agent import safety_ethics_agent
@@ -39,7 +42,8 @@ def _coerce_model(raw: object, model_cls: Type[T]) -> Optional[T]:
       - dict
       - JSON string
 
-    Returns None on any validation error.
+    Returns None on any validation error, logging a warning to help catch
+    schema drift early.
     """
     if raw is None:
         return None
@@ -52,17 +56,29 @@ def _coerce_model(raw: object, model_cls: Type[T]) -> Optional[T]:
     if isinstance(raw, dict):
         try:
             return model_cls.model_validate(raw)
-        except ValidationError:
+        except ValidationError as e:
+            logger.warning(
+                f"Failed to validate dict as {model_cls.__name__}: {e}. "
+                f"This may indicate schema drift or unexpected state structure."
+            )
             return None
 
     # JSON string
     if isinstance(raw, str):
         try:
             return model_cls.model_validate_json(raw)
-        except ValidationError:
+        except ValidationError as e:
+            logger.warning(
+                f"Failed to validate JSON string as {model_cls.__name__}: {e}. "
+                f"This may indicate schema drift or unexpected state structure."
+            )
             return None
 
     # Anything else: give up
+    logger.warning(
+        f"Cannot coerce {type(raw).__name__} to {model_cls.__name__}. "
+        f"Expected dict, JSON string, or {model_cls.__name__} instance."
+    )
     return None
 
 
