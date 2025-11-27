@@ -65,12 +65,24 @@ def _coerce_model(raw: object, model_cls: Type[T]) -> Optional[T]:
 
     # JSON string
     if isinstance(raw, str):
+        # Strip Markdown code blocks if present
+        cleaned = raw.strip()
+        if cleaned.startswith("```"):
+            # Remove first line (```json or just ```)
+            first_newline = cleaned.find("\n")
+            if first_newline != -1:
+                cleaned = cleaned[first_newline+1:]
+            # Remove last line (```)
+            if cleaned.endswith("```"):
+                cleaned = cleaned[:-3]
+            cleaned = cleaned.strip()
+        
         try:
-            return model_cls.model_validate_json(raw)
+            return model_cls.model_validate_json(cleaned)
         except ValidationError as e:
             logger.warning(
                 f"Failed to validate JSON string as {model_cls.__name__}: {e}. "
-                f"This may indicate schema drift or unexpected state structure."
+                f"Raw input: {raw[:100]}..."
             )
             return None
 

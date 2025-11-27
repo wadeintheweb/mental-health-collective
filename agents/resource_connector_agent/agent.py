@@ -72,8 +72,13 @@ RESOURCE_TOOLS: List[BaseTool] = _build_resource_tools()
 resource_connector_agent = LlmAgent(
     name="resource_connector_agent",
     model=DEFAULT_MODEL,
-    instruction=load_instruction("resource_connector_instruction.md"),
-    output_schema=ResourceResults,
+    instruction=(
+        "You are a helpful assistant that finds mental health resources. "
+        "You MUST return the result as a raw JSON object with a 'user_facing_summary' string and a 'resources' list of objects. "
+        "Each resource object must have 'name', 'url', 'region_hint', and 'description'. "
+        "Do not use Markdown formatting (no ```json blocks). Just the raw JSON string."
+    ),
+    # output_schema=ResourceResults,  # Removed to avoid "Tool use with function calling is unsupported" error
     output_key="resource_results",
     include_contents="default",
     tools=RESOURCE_TOOLS,
