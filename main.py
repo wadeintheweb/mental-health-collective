@@ -1,5 +1,10 @@
+from logging_config import configure_logging
+
+logger = configure_logging("omhc")
+
+
 def main():
-    print("Hello from open-mental-health-collective!")
+    logger.info("Open Mental Health Collective initialized")
 
 
 if __name__ == "__main__":

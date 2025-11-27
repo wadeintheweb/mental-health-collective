@@ -5,6 +5,10 @@ import argparse
 from dataclasses import dataclass, field
 from typing import List, Dict, Any
 
+from logging_config import configure_logging
+
+logger = configure_logging("omhc.eval")
+
 import vertexai
 try:
     from vertexai import agent_engines  # Agent Engine integration in Vertex AI SDK
@@ -281,7 +285,7 @@ def run_eval(selected_tag: str = "all") -> Dict[str, Any]:
     vertexai.init(project=PROJECT_ID, location=LOCATION)
 
     if not hasattr(agent_engines, "AgentEnginesClient"):
-        print("WARNING: AgentEnginesClient not found in vertexai.agent_engines. Skipping remote eval.")
+        logger.warning("AgentEnginesClient not found in vertexai.agent_engines. Skipping remote eval.")
         return {"summary": {"pass_rate": 1.0, "skipped": True}, "cases": []}
 
     client = agent_engines.AgentEnginesClient()
@@ -371,26 +375,26 @@ def main():
 
     out = run_eval(selected_tag=selected_tag)
 
-    print("=== OMHC Agent Engine Eval Summary ===")
+    logger.info("=== OMHC Agent Engine Eval Summary ===")
     summary = out["summary"]
-    print(f"Project: {summary['project_id']}")
-    print(f"Location: {summary['location']}")
-    print(f"AgentEngine: {summary['agent_engine_resource']}")
-    print(f"Tag group: {summary['selected_tag']}")
-    print(f"Total cases: {summary['total_cases']}")
-    print(f"Passed: {summary['passed_cases']}")
-    print(f"Pass rate: {summary['pass_rate']:.2%}")
-    print()
+    logger.info(f"Project: {summary['project_id']}")
+    logger.info(f"Location: {summary['location']}")
+    logger.info(f"AgentEngine: {summary['agent_engine_resource']}")
+    logger.info(f"Tag group: {summary['selected_tag']}")
+    logger.info(f"Total cases: {summary['total_cases']}")
+    logger.info(f"Passed: {summary['passed_cases']}")
+    logger.info(f"Pass rate: {summary['pass_rate']:.2%}")
+    logger.info("")
 
     for case in out["cases"]:
         status = "PASS" if case["passed"] else "FAIL"
-        print(f"--- Case {case['id']} [{case['tag']}] --- {status}")
+        logger.info(f"--- Case {case['id']} [{case['tag']}] --- {status}")
         if case["failures"]:
             for f in case["failures"]:
-                print("  -", f)
-        print("Response snippet:")
-        print(case["response"][:500])
-        print()
+                logger.info(f"  - {f}")
+        logger.info("Response snippet:")
+        logger.info(case["response"][:500])
+        logger.info("")
 
 
 if __name__ == "__main__":
