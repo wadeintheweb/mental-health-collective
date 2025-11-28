@@ -11,11 +11,11 @@ mcp = FastMCP("omc-mental-health-resources")
 def list_crisis_hotlines(country_code: str) -> List[Dict[str, str]]:
     """
     Return a small list of general crisis hotline resources for the given
-    ISO country code.
+    ISO country code (e.g., 'US', 'CA').
 
     This is a MOCK / DEMO implementation. You MUST validate and expand this
     list for real deployments, and ideally drive it from a maintained data
-    source or API.
+    source or vetted API.
 
     The returned objects are intentionally simple so they can be mapped
     easily into the ResourceResults schema in the OMHC Resource Connector.

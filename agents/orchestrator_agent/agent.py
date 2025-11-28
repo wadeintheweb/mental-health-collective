@@ -137,9 +137,30 @@ def _assemble_final_response(state: dict) -> Optional[str]:
     plan = _load_therapy_plan(state)
     resources = _load_resource_results(state)
 
-    # Safety override first
+    # Safety override handling - but include resources if available
     if safety and safety.block_reply and safety.user_message_override:
-        return safety.user_message_override.strip()
+        override =safety.user_message_override.strip()
+        
+        # CRITICAL: Even in safety ceiling, we MUST include resources if they exist
+        if resources:
+            res_block_parts: List[str] = []
+            if resources.resources:
+                res_lines = []
+                for item in resources.resources:
+                    line = f"- {item.name}"
+                    if item.region_hint:
+                        line += f" ({item.region_hint})"
+                    if item.url:
+                        line += f" – {item.url}"
+                    if item.description:
+                        line += f": {item.description}"
+                    res_lines.append(line)
+                res_block_parts.append("\n".join(res_lines))
+            
+            if res_block_parts:
+                return override + "\n\n" + "\n\n".join(res_block_parts)
+        
+        return override
 
     # If nothing to assemble, bail
     if plan is None and resources is None:
@@ -315,6 +336,17 @@ class MentalHealthOrchestrator(BaseAgent):
             Final crisis-oriented event
         """
         state = ctx.session.state
+        
+        # CRITICAL FIX: If the user is asking for resources/crisis support,
+        # we MUST run the resource connector even if we are blocking the reply,
+        # so that we can include the resources in the final safety message.
+        listener = _load_listener_output(state)
+        if listener and listener.user_intent in ("resource_navigation", "crisis_support"):
+            async for event in self.resource_connector_agent.run_async(ctx):
+                yield event
+            # Reload state after agent run
+            state = ctx.session.state
+
         assembled = _assemble_final_response(state)
         
         if not assembled:

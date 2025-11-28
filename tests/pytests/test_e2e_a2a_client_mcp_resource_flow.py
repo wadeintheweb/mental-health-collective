@@ -60,8 +60,6 @@ async def test_a2a_client_resource_flow_via_mcp():
     ]
     mcp_proc = subprocess.Popen(
         mcp_cmd,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
         text=True,
     )
 
@@ -69,23 +67,48 @@ async def test_a2a_client_resource_flow_via_mcp():
     a2a_env = os.environ.copy()
     a2a_env["OMC_A2A_SERVER_HOST"] = "127.0.0.1"
     a2a_env["OMC_A2A_SERVER_PORT"] = str(A2A_PORT)
+    # Pass MCP URL to the A2A server so it can connect to the MCP server
+    a2a_env["MENTAL_HEALTH_MCP_URL"] = MCP_URL
 
-    a2a_cmd = ["python", "omhc_a2a_server.py"]
+    import sys
+    a2a_cmd = [sys.executable, "omhc_a2a_server.py"]
     a2a_proc = subprocess.Popen(
         a2a_cmd,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
         text=True,
         env=a2a_env,
     )
 
     try:
-        # Give MCP + A2A some time to start
-        time.sleep(3.0)
+        # Give MCP + A2A some time to start (increased to 10s for slower envs)
+        time.sleep(10.0)
+
+        # Check if processes are still running
+        if mcp_proc.poll() is not None:
+            pytest.fail(f"MCP server failed to start. RC={mcp_proc.returncode}")
+
+        if a2a_proc.poll() is not None:
+            pytest.fail(f"A2A server failed to start. RC={a2a_proc.returncode}")
 
         # 3) Point Resource Connector Agent + A2A client at these endpoints
         os.environ["MENTAL_HEALTH_MCP_URL"] = MCP_URL
-        os.environ["OMC_A2A_BASE_URL"] = A2A_BASE_URL
+        os.environ["OMHC_A2A_BASE_URL"] = A2A_BASE_URL
+
+        # Reload client agent to pick up the new env var
+        import importlib
+        import a2a_client.client_agent
+        importlib.reload(a2a_client.client_agent)
+        from a2a_client.client_agent import root_agent as a2a_client_root
+
+        # DEBUG: Verify connectivity from within test
+        print(f"DEBUG: Curling {A2A_BASE_URL}/a2a/open_mhc_orchestrator/.well-known/agent-card.json")
+        curl_res = subprocess.run(
+            ["curl", "-v", f"{A2A_BASE_URL}/a2a/open_mhc_orchestrator/.well-known/agent-card.json"],
+            capture_output=True,
+            text=True
+        )
+        print(f"DEBUG: Curl RC={curl_res.returncode}")
+        print(f"DEBUG: Curl stdout: {curl_res.stdout}")
+        print(f"DEBUG: Curl stderr: {curl_res.stderr}")
 
         # 4) Set up ADK runner + session
         session_service = InMemorySessionService()
@@ -103,33 +126,36 @@ async def test_a2a_client_resource_flow_via_mcp():
 
         user_content = types.Content(
             role="user",
-            parts=[
-                types.Part(
-                    text=(
-                        "I live in Canada and I'm feeling really unsafe. "
-                        "Can you give me suicide crisis hotlines I can call?"
+                parts=[
+                    types.Part(
+                        text=(
+                            "I live in Canada and I'm feeling really unsafe. "
+                            "Can you give me suicide crisis hotlines I can call?"
+                        )
                     )
-                )
-            ],
+                ],
         )
 
         # Run the A2A client root agent; it will call OMHC orchestrator remotely.
+        full_text = ""
         last_event = None
         try:
             async for event in runner.run_async(
                 session_id=session.id, user_id=USER_ID, new_message=user_content
             ):
+                print(f"DEBUG: Event: {event}")
                 last_event = event
+                parts = getattr(event.content, "parts", []) or []
+                for p in parts:
+                    if hasattr(p, "text") and p.text:
+                        full_text += p.text
         except Exception as e:
             if "Tool use with function calling is unsupported" in str(e):
                 pytest.skip(f"Skipping E2E A2A test due to environment tool support issue: {e}")
             raise e
 
         assert last_event is not None, "No events emitted by A2A client root agent."
-
-        parts = getattr(last_event.content, "parts", []) or []
-        texts = [getattr(p, "text", "") for p in parts if hasattr(p, "text")]
-        full_text = "\n".join(t for t in texts if t)
+        print(f"DEBUG: Full Text: {full_text}")
 
         # 5) Assert that the response includes our MCP-provided hotline
         assert "Talk Suicide Canada" in full_text
